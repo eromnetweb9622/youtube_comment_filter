@@ -41,7 +41,7 @@ def public_monitor():
     return render_template("public_monitor.html")
 
 
-@api.route("/admin")
+@api.route("/admin/dashboard")
 def admin_dashboard():
     """
     관리자 대시보드 화면
