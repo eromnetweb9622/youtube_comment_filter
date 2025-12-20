@@ -1,55 +1,71 @@
-from google import genai
+# ==============================
+# Gemini REST API 우회 호출
+# ==============================
 import os
-from dotenv import load_dotenv
+import requests
 import json
 
-# ==============================
-# .env 파일 로드
-# ==============================
-load_dotenv()
-
-# ==============================
-# Gemini API 키
-# ==============================
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
-    
-)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 def analyze_comment(text):
     """
-    댓글 하나를 Gemini로 분석
-    분류: 욕설 / 광고·스팸 / 정상
+    Gemini REST API를 직접 호출하여
+    댓글을 분류 (우회 방식)
     """
 
+    url = (
+        "https://generativelanguage.googleapis.com/"
+        "v1/models/gemini-pro:generateContent"
+        f"?key={GEMINI_API_KEY}"
+    )
+
     prompt = f"""
-다음 유튜브 댓글을 분석해서 분류해줘.
+    다음 댓글을 분석해서
+    욕설, 혐오, 광고, 정상 중 하나로 분류하고
+    이유를 간단히 설명해줘.
 
-분류 기준:
-- 욕설
-- 광고/스팸
-- 정상
+    댓글: {text}
 
-댓글:
-"{text}"
+    JSON 형식으로만 응답해.
+    {{
+      "category": "",
+      "reason": ""
+    }}
+    """
 
-JSON 형식으로만 출력:
-{{
-  "category": "욕설 | 광고/스팸 | 정상",
-  "reason": "판단 이유 한 줄"
-}}
-"""
-
-    response = client.models.generate_content(
-        model="gemini-1.5-flash",   # ✅ 여기만 수정
-        contents=[
+    payload = {
+        "contents": [
             {
-                "role": "user",
                 "parts": [
                     {"text": prompt}
                 ]
             }
         ]
+    }
+
+    response = requests.post(
+        url,
+        headers={"Content-Type": "application/json"},
+        data=json.dumps(payload)
     )
 
-    return json.loads(response.text)
+    data = response.json()
+
+    # Gemini 응답 파싱
+    try:
+        result_text = data["candidates"][0]["content"]["parts"][0]["text"]
+        return json.loads(result_text)
+    except Exception:
+        return {
+            "category": "error",
+            "reason": "Gemini 응답 파싱 실패"
+        }
+
+
+# ==============================
+# 단독 실행 테스트
+# ==============================
+if __name__ == "__main__":
+    test_comment = "이 영상 존나 별로네 ㅋㅋ"
+    result = analyze_comment(test_comment)
+    print(result)
