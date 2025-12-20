@@ -1,0 +1,51 @@
+<!-- ============================= -->
+<!-- 사이드바 (include 전용 컴포넌트) -->
+<!-- ⚠️ 절대 extends / block 사용 금지 -->
+<!-- ============================= -->
+
+<aside
+  class="fixed left-0 top-0 w-64 h-screen
+         bg-slate-900 border-r border-slate-800
+         text-slate-200"
+>
+  <!-- ============================= -->
+  <!-- 로고 / 서비스 이름 영역 -->
+  <!-- ============================= -->
+  <div class="p-6 text-xl font-black tracking-wide">
+    🛡 YouTube-Comment-Filter
+  </div>
+
+  <!-- ============================= -->
+  <!-- 네비게이션 메뉴 -->
+  <!-- ============================= -->
+  <nav class="px-4 space-y-2">
+
+    <!-- 실시간 댓글 관제 -->
+    <a
+      href="/"
+      class="block px-4 py-2 rounded-lg
+             hover:bg-slate-800 transition"
+    >
+      실시간 관제
+    </a>
+
+    <!-- 관리자 대시보드 -->
+    <a
+      href="/admin/dashboard"
+      class="block px-4 py-2 rounded-lg
+             hover:bg-slate-800 transition"
+    >
+      관리자 대시보드
+    </a>
+
+    <!-- 블랙리스트 관리 -->
+    <a
+      href="/admin/blacklist"
+      class="block px-4 py-2 rounded-lg
+             hover:bg-slate-800 transition"
+    >
+      블랙리스트
+    </a>
+
+  </nav>
+</aside>

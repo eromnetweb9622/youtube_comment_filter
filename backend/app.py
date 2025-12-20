@@ -1,51 +1,73 @@
 # ==============================
 # Flask 기본 모듈
 # ==============================
-from flask import Flask, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 
 # ==============================
-# 프론트엔드(React)와 통신하기 위한 CORS 설정
+# CORS 설정
 # ==============================
 from flask_cors import CORS
 
 # ==============================
-# 정규식 사용 (유튜브 URL에서 video_id 추출)
+# 정규식
 # ==============================
 import re
 
 # ==============================
-# youtube_api.py에 작성한 함수 가져오기
+# YouTube API 로직
 # ==============================
-from youtube_api import get_comments
+from backend.youtube_api import get_comments
 
 
 # ==============================
-# Flask 앱 생성
+# Blueprint 생성
 # ==============================
-app = Flask(__name__)
-
-# ==============================
-# CORS 허용 (React → Flask API 호출 가능)
-# ==============================
-CORS(app)
+# ❗ Flask(app) 생성 ❌
+# ❗ run.py에서 생성한 app에 등록됨
+api = Blueprint("api", __name__)
+CORS(api)
 
 
 # ==============================
-# 유튜브 URL에서 video_id 추출하는 함수
+# 🎯 페이지 라우팅 (⭐ 이게 없어서 빈 화면이었음)
+# ==============================
+
+@api.route("/")
+def public_monitor():
+    """
+    실시간 댓글 모니터링 메인 화면
+    → public_monitor.html
+    """
+    return render_template("public_monitor.html")
+
+
+@api.route("/admin")
+def admin_dashboard():
+    """
+    관리자 대시보드 화면
+    """
+    return render_template("admin_dashboard.html")
+
+
+@api.route("/admin/blacklist")
+def admin_blacklist():
+    """
+    블랙리스트 관리 화면
+    """
+    return render_template("admin_blacklist.html")
+
+
+# ==============================
+# 유튜브 URL → video_id 추출
 # ==============================
 def extract_video_id(youtube_url):
     """
-    다양한 형태의 유튜브 URL에서 video_id를 추출한다.
-    지원 예시:
-    - https://www.youtube.com/watch?v=xxxx
-    - https://youtu.be/xxxx
-    - https://www.youtube.com/shorts/xxxx
+    다양한 유튜브 URL에서 video_id 추출
     """
-
     patterns = [
-        r"v=([^&]+)",          # watch?v=xxxx
-        r"youtu\.be/([^?]+)",  # youtu.be/xxxx
-        r"shorts/([^?]+)"      # shorts/xxxx
+        r"v=([^&]+)",
+        r"youtu\.be/([^?]+)",
+        r"shorts/([^?]+)"
     ]
 
     for pattern in patterns:
@@ -57,44 +79,27 @@ def extract_video_id(youtube_url):
 
 
 # ==============================
-# 유튜브 댓글 API 엔드포인트
+# ✅ 유튜브 댓글 API
 # ==============================
-@app.route("/api/comments", methods=["GET"])
+@api.route("/api/comments", methods=["GET"])
 def comments():
     """
-    유튜브 댓글을 반환하는 API
-    사용 예:
-    /api/comments?url=https://www.youtube.com/watch?v=xxxx
+    유튜브 댓글을 가져와 JSON으로 반환
     """
 
-    # URL 파라미터에서 유튜브 주소 가져오기
     youtube_url = request.args.get("url")
 
-    # url이 없으면 에러 반환
     if not youtube_url:
         return jsonify({"error": "url is required"}), 400
 
-    # 유튜브 URL에서 video_id 추출
     video_id = extract_video_id(youtube_url)
 
-    # video_id 추출 실패 시 에러 반환
     if not video_id:
         return jsonify({"error": "invalid youtube url"}), 400
 
     try:
-        # youtube_api.py의 함수로 댓글 가져오기
         comments = get_comments(video_id)
-
-        # JSON 형태로 프론트엔드에 반환
         return jsonify(comments)
 
     except Exception as e:
-        # 서버 내부 에러 처리
         return jsonify({"error": str(e)}), 500
-
-
-# ==============================
-# 이 파일을 직접 실행했을 때만 Flask 서버 실행
-# ==============================
-if __name__ == "__main__":
-    app.run(debug=True)

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 class="text-3xl font-extrabold mb-8">
+  유튜브 댓글 AI 분석
+</h1>
+
+<!-- URL 입력 -->
+<div class="flex gap-4 mb-8">
+  <input
+    id="youtube-url"
+    class="flex-1 p-4 rounded-xl bg-slate-900 border border-slate-700"
+    placeholder="유튜브 영상 URL을 입력하세요"
+  />
+  <button
+    onclick="fetchComments()"
+    class="px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold"
+  >
+    분석 시작
+  </button>
+</div>
+
+<!-- AI 요약 -->
+<div
+  id="ai-summary"
+  class="hidden mb-10 p-6 bg-slate-900 rounded-2xl border border-slate-800"
+>
+  <h2 class="font-bold mb-2">AI 요약</h2>
+  <p id="summary-text" class="text-slate-300"></p>
+</div>
+
+<!-- 댓글 카드 -->
+<div id="comment-list" class="grid grid-cols-3 gap-6"></div>
+
+{% endblock %}

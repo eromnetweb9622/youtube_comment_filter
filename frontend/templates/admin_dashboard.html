@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 class="text-3xl font-extrabold mb-10">
+  관리자 대시보드
+</h1>
+
+<div class="grid grid-cols-4 gap-6 mb-12">
+  <div class="stat-card">
+    <p class="stat-title">총 댓글</p>
+    <p id="total-count" class="stat-number">-</p>
+  </div>
+
+  <div class="stat-card">
+    <p class="stat-title">정상</p>
+    <p id="normal-count" class="stat-number text-emerald-400">-</p>
+  </div>
+
+  <div class="stat-card">
+    <p class="stat-title">욕설</p>
+    <p id="abuse-count" class="stat-number text-rose-400">-</p>
+  </div>
+
+  <div class="stat-card">
+    <p class="stat-title">광고 / 스팸</p>
+    <p id="spam-count" class="stat-number text-amber-400">-</p>
+  </div>
+</div>
+
+<div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+  <h2 class="font-bold mb-4">댓글 분류 비율</h2>
+  <canvas id="categoryChart" height="120"></canvas>
+</div>
+
+<div class="mt-10 flex gap-4">
+  <input
+    id="youtube-url"
+    class="flex-1 p-4 rounded-xl bg-slate-900 border border-slate-700"
+    placeholder="유튜브 영상 URL"
+  />
+
+  <button
+    onclick="loadDashboard()"
+    class="px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold"
+  >
+    분석
+  </button>
+</div>
+
+{% endblock %}

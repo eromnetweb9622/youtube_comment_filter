@@ -13,7 +13,7 @@ from googleapiclient.discovery import build
 # ==============================
 # OpenAI 댓글 분석 함수
 # ==============================
-from openai_service import analyze_comment
+from backend.openai_service import analyze_comment
 
 # ==============================
 # YouTube API Key
