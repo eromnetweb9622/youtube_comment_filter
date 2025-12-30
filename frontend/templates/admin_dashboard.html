@@ -1,51 +1,98 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="p-8">
+    <h1 class="text-2xl font-bold mb-6">관리자 대시보드</h1>
 
-<h1 class="text-3xl font-extrabold mb-10">
-  관리자 대시보드
-</h1>
+    <div class="bg-white p-6 rounded-2xl shadow-sm mb-6">
+        <div class="flex gap-4">
+            <input type="text" id="youtube-url" value="{{ url or '' }}" 
+                   placeholder="유튜브 URL을 입력하세요"
+                   class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="loadDashboard()" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700">분석 시작</button>
+        </div>
+    </div>
 
-<div class="grid grid-cols-4 gap-6 mb-12">
-  <div class="stat-card">
-    <p class="stat-title">총 댓글</p>
-    <p id="total-count" class="stat-number">-</p>
-  </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500">
+            <p class="text-sm text-gray-500 font-semibold">총 댓글 수</p>
+            <h2 id="total-count" class="text-3xl font-bold text-gray-800">{{ summary.total if summary else 0 }}</h2>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-green-500">
+            <p class="text-sm text-gray-500 font-semibold">정상 댓글</p>
+            <h2 id="normal-count" class="text-3xl font-bold text-gray-800">{{ summary.normal if summary else 0 }}</h2>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-500">
+            <p class="text-sm text-gray-500 font-semibold">욕설/비방</p>
+            <h2 id="abuse-count" class="text-3xl font-bold text-gray-800">{{ summary.abuse if summary else 0 }}</h2>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-yellow-500">
+            <p class="text-sm text-gray-500 font-semibold">광고/스팸</p>
+            <h2 id="spam-count" class="text-3xl font-bold text-gray-800">{{ summary.spam if summary else 0 }}</h2>
+        </div>
+    </div>
 
-  <div class="stat-card">
-    <p class="stat-title">정상</p>
-    <p id="normal-count" class="stat-number text-emerald-400">-</p>
-  </div>
-
-  <div class="stat-card">
-    <p class="stat-title">욕설</p>
-    <p id="abuse-count" class="stat-number text-rose-400">-</p>
-  </div>
-
-  <div class="stat-card">
-    <p class="stat-title">광고 / 스팸</p>
-    <p id="spam-count" class="stat-number text-amber-400">-</p>
-  </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm max-w-md mx-auto">
+        <h3 class="text-lg font-semibold mb-4 text-center">댓글 분포도</h3>
+        <canvas id="categoryChart"></canvas>
+    </div>
 </div>
 
-<div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-  <h2 class="font-bold mb-4">댓글 분류 비율</h2>
-  <canvas id="categoryChart" height="120"></canvas>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div class="mt-10 flex gap-4">
-  <input
-    id="youtube-url"
-    class="flex-1 p-4 rounded-xl bg-slate-900 border border-slate-700"
-    placeholder="유튜브 영상 URL"
-  />
+<script>
+  let categoryChart;
 
-  <button
-    onclick="loadDashboard()"
-    class="px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold"
-  >
-    분석
-  </button>
-</div>
+  // 💡 차트 그리기 함수 분리
+  function renderChart(summary) {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    if (categoryChart) categoryChart.destroy();
 
+    categoryChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['정상', '욕설', '광고/스팸'],
+        datasets: [{
+          data: [summary.normal || 0, summary.abuse || 0, summary.spam || 0],
+          backgroundColor: ['#34d399', '#f87171', '#fbbf24']
+        }]
+      },
+      options: { responsive: true }
+    });
+  }
+
+  // 💡 버튼 클릭 시 실행되는 함수
+  async function loadDashboard() {
+    const urlInput = document.getElementById('youtube-url').value.trim();
+    if (!urlInput) return;
+
+    try {
+      const response = await fetch(`/api/comments?url=${encodeURIComponent(urlInput)}`);
+      const data = await response.json();
+      if (data.error) { alert(data.error); return; }
+
+      const summary = data.summary;
+      document.getElementById('total-count').textContent = summary.total;
+      document.getElementById('normal-count').textContent = summary.normal;
+      document.getElementById('abuse-count').textContent = summary.abuse;
+      document.getElementById('spam-count').textContent = summary.spam;
+
+      renderChart(summary);
+    } catch (err) { console.error(err); }
+  }
+
+  // 💡 [중요] 페이지 로드 시 세션 데이터가 있으면 자동으로 차트 그림
+  window.onload = function() {
+    const initialSummary = {
+        total: {{ (summary.total if summary else 0) | tojson }},
+        normal: {{ (summary.normal if summary else 0) | tojson }},
+        abuse: {{ (summary.abuse if summary else 0) | tojson }},
+        spam: {{ (summary.spam if summary else 0) | tojson }}
+    };
+    if (initialSummary.total > 0) {
+        renderChart(initialSummary);
+    }
+  };
+</script>
 {% endblock %}

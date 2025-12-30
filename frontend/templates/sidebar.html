@@ -1,68 +1,36 @@
-<!-- ============================= -->
-<!-- 사이드바 (include 전용 컴포넌트) -->
-<!-- ⚠️ 절대 extends / block 사용 금지 -->
-<!-- ============================= -->
-
-<aside
-  class="fixed left-0 top-0 w-64 h-screen
-         bg-slate-900 border-r border-slate-800
-         text-slate-200"
->
-  <!-- ============================= -->
-  <!-- 로고 / 서비스 이름 영역 -->
-  <!-- ============================= -->
-  <div class="px-4 py-6 flex items-center gap-3 border-b border-slate-800">
-  <span class="text-2xl">🛡</span>
-  <div class="leading-tight">
-    <div class="text-lg font-extrabold">YouTube</div>
-    <div class="text-sm text-slate-400">Comment Filter</div>
-  </div>
-</div>
-
-  <!-- ============================= -->
-  <!-- 네비게이션 메뉴 -->
-  <!-- ============================= -->
-  <nav class="px-4 space-y-2">
-
-    <!-- 실시간 댓글 관제 -->
-    <a
-      href="/"
-      class="block px-4 py-2 rounded-lg
-             hover:bg-slate-800 transition"
-    >
-      실시간 관제
-    </a>
-
-    <!-- 관리자 대시보드 -->
-    <a
-      href="/admin/dashboard"
-      class="block px-4 py-2 rounded-lg
-             hover:bg-slate-800 transition"
-    >
-      관리자 대시보드
-    </a>
-
-    <!-- 블랙리스트 관리 -->
-    <a
-      href="/admin/blacklist"
-      class="block px-4 py-2 rounded-lg
-             hover:bg-slate-800 transition"
-    >
-      블랙리스트
-    </a>
-
-    <!-- ============================= -->
-  <!-- 하단: 로그인 버튼 -->
-  <!-- ============================= -->
-  <div class="px-4 py-4">
-    <a
-      href="/admin/login"
-      id="admin-login-btn"
-      class="block text-center px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition"
-    >
-      🔒 관리자 로그인
-    </a>
+<aside class="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white flex flex-col shadow-xl z-50">
+  <div class="p-6">
+    <h1 class="text-2xl font-bold tracking-tight">YouTube <span class="text-indigo-400">Filter</span></h1>
   </div>
 
+  <nav class="flex-1 px-4 space-y-2">
+    <a href="{{ url_for('api.public_monitor') }}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition">
+      <span>실시간 관제</span>
+    </a>
+    <a href="{{ url_for('api.admin_dashboard') }}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition">
+      <span>관리자 대시보드</span>
+    </a>
+    <a href="{{ url_for('api.admin_blacklist') }}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition">
+      <span>블랙리스트</span>
+    </a>
   </nav>
+
+  <div class="p-4 bg-slate-800 mt-auto">
+    {% if session.get('is_admin') %}
+      <div class="flex flex-col space-y-3">
+        <div class="flex items-center space-x-2 text-sm text-gray-300">
+          <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+          <span>관리자 로그인 중</span>
+        </div>
+        <a href="{{ url_for('api.admin_logout') }}" 
+           class="w-full text-center py-2 px-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-md transition duration-200 text-sm font-medium border border-red-500/20">
+          로그아웃
+        </a>
+      </div>
+    {% else %}
+      <a href="{{ url_for('api.admin_login') }}" class="w-full block text-center py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition text-sm">
+        🔒 관리자 로그인
+      </a>
+    {% endif %}
+  </div>
 </aside>

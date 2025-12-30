@@ -1,39 +1,41 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>커뮤니티 가드 게이트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0f172a] flex items-center justify-center min-h-screen">
 
-{% block content %}
-<!-- 🔹 로그인 모달 내용 (독립 페이지로) -->
-<div class="flex items-center justify-center min-h-screen">
-  <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 relative">
-    
-    <!-- 상단 로고 & 텍스트 -->
-    <div class="flex items-center mb-6">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="GuardAI Logo" class="h-10 w-10 mr-3">
-      <div>
-        <h1 class="text-2xl font-bold text-red-600">커뮤니티 가드 게이트</h1>
-        <p class="text-sm text-gray-400">관리자 계정으로 로그인이 필요합니다.</p>
-      </div>
+    <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-[#e11d48] text-2xl font-bold mb-1">커뮤니티 가드 게이트</h1>
+            <p class="text-slate-400 text-sm">관리자 계정으로 로그인이 필요합니다.</p>
+        </div>
+
+        <form action="/admin/login" method="POST" class="space-y-6">
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Admin ID</label>
+                <input type="text" name="admin_id" required
+                       class="w-full px-4 py-3 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-slate-300 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Secret Code</label>
+                <input type="password" name="secret_code" required
+                       class="w-full px-4 py-3 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-slate-300 outline-none">
+            </div>
+
+            {% if error %}
+            <p class="text-red-500 text-xs text-center font-bold">{{ error }}</p>
+            {% endif %}
+
+            <button type="submit" 
+                    class="w-full py-4 bg-[#1e293b] text-white rounded-xl font-bold hover:bg-slate-700 transition shadow-lg">
+                시스템 진입 →
+            </button>
+        </form>
     </div>
 
-    <!-- 로그인 폼 -->
-    <form action="/admin/login" method="POST" class="space-y-4">
-      <div>
-        <label for="admin-id" class="text-xs font-semibold text-gray-500 uppercase">ADMIN ID</label>
-        <input type="text" id="admin-id" name="admin_id" placeholder="admin123"
-               class="mt-1 w-full px-4 py-2 rounded-xl bg-slate-100 text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500">
-      </div>
-
-      <div>
-        <label for="secret-code" class="text-xs font-semibold text-gray-500 uppercase">SECRET CODE</label>
-        <input type="password" id="secret-code" name="secret_code" placeholder="••••••••"
-               class="mt-1 w-full px-4 py-2 rounded-xl bg-slate-100 text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500">
-      </div>
-
-      <button type="submit"
-              class="w-full py-2 mt-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors">
-        시스템 진입 &rarr;
-      </button>
-    </form>
-    
-  </div>
-</div>
-{% endblock %}
+</body>
+</html>

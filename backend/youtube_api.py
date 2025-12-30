@@ -37,99 +37,77 @@ youtube = build(
 )
 
 def get_comments(video_id, max_results=100):
-    """
-    유튜브 댓글을 가져와서
-    각 댓글을 OpenAI(GPT)로 분석한 뒤 반환
-
-    ✔ max_results: 최대로 가져올 댓글 수 (50, 100, 200 등)
-
-    ⚠️ 주의:
-    - YouTube API는 한 번에 최대 50개만 반환
-    - nextPageToken으로 반복 호출 필요
-    """
-
     results = []
-    page_token = None   # 🔥 페이지네이션용 토큰
+    page_token = None
 
-    danger_count = 0    # 🔥 위험 댓글 개수 (요약용)
+    # 🔥 카운터 3개로 분리
+    normal_count = 0
+    abuse_count = 0      # 욕설
+    spam_count = 0       # 광고/스팸
 
-    # ==============================
-    # 🔁 nextPageToken이 있는 동안 반복 호출
-    # ==============================
     while len(results) < max_results:
-
         request = youtube.commentThreads().list(
             part="snippet",
             videoId=video_id,
-            maxResults=50,            # ❗ YouTube API 최대값은 항상 50
+            maxResults=50,
             textFormat="plainText",
-            pageToken=page_token      # 🔥 다음 페이지 요청
+            pageToken=page_token
         )
-
         response = request.execute()
 
-        # ==============================
-        # 댓글 하나씩 처리
-        # ==============================
         for item in response.get("items", []):
             snippet = item["snippet"]["topLevelComment"]["snippet"]
             text = snippet["textDisplay"]
 
-            # =====================================================
-            # 🔥 OpenAI(GPT)로 댓글 분석
-            #
-            # 1순위 핵심:
-            # - 이 결과가 과도하게 "위험"으로 나오는 문제는
-            #   ❌ 여기 문제가 아니라
-            #   ✅ analyze_comment 내부 GPT 프롬프트 문제임
-            # =====================================================
             analysis = analyze_comment(text)
 
             # ==============================
-            # 🔥 category 정규화 (매우 중요)
+            # 🔥 category 정규화 (3가지로 강제 매핑)
             # ==============================
-            raw_category = analysis.get("category", "정상")
+            raw_category = analysis.get("category", "정상").strip()
 
-            # GPT가 이상한 값 주면 무조건 정상 처리
-            if raw_category not in ["정상", "위험"]:
-                raw_category = "정상"
+            # 허용되는 값만 통과, 나머지는 무조건 정상
+            if raw_category in ["욕설", "광고/스팸", "스팸", "광고"]:
+                if "욕설" in raw_category:
+                    category = "욕설"
+                else:
+                    category = "광고/스팸"
+            else:
+                category = "정상"
 
-            if raw_category == "위험":
-                danger_count += 1
+            # 카운터 증가
+            if category == "정상":
+                normal_count += 1
+            elif category == "욕설":
+                abuse_count += 1
+            elif category == "광고/스팸":
+                spam_count += 1
 
             results.append({
                 "author": snippet["authorDisplayName"],
                 "text": text,
                 "likeCount": snippet["likeCount"],
                 "publishedAt": snippet["publishedAt"],
-
-                # ❗ 프론트 집계용 category (정상 / 위험만 사용)
-                "category": raw_category,
-
-                # ❗ reason은 관리자 확인용
-                "reason": analysis.get("reason", "분석 실패 또는 기본 처리")
+                "category": category,
+                "reason": analysis.get("reason", "분석 정보 없음")
             })
 
-            # ❗ max_results 초과 방지
             if len(results) >= max_results:
                 break
 
-        # ==============================
-        # 다음 페이지 토큰 처리
-        # ==============================
         page_token = response.get("nextPageToken")
-
-        # ❗ 다음 페이지 없으면 종료
         if not page_token:
             break
 
     # ==============================
-    # 🔥 요약 정보 포함해서 반환
+    # 🔥 대시보드가 원하는 형태로 summary 반환
     # ==============================
     return {
         "summary": {
             "total": len(results),
-            "danger": danger_count
+            "normal": normal_count,
+            "abuse": abuse_count,      # 욕설
+            "spam": spam_count         # 광고/스팸
         },
         "comments": results
     }

@@ -2,35 +2,120 @@
 
 {% block content %}
 
-<h1 class="text-3xl font-extrabold mb-8">
+<h1 class="text-3xl font-extrabold mb-8 text-slate-100">
   유튜브 댓글 AI 분석
 </h1>
 
-<!-- URL 입력 -->
 <div class="flex gap-4 mb-8">
   <input
     id="youtube-url"
-    class="flex-1 p-4 rounded-xl bg-slate-900 border border-slate-700"
+    class="flex-1 p-4 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
     placeholder="유튜브 영상 URL을 입력하세요"
   />
   <button
     onclick="fetchComments()"
-    class="px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold"
+    class="px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white transition-all shadow-lg"
   >
     분석 시작
   </button>
 </div>
 
-<!-- AI 요약 -->
 <div
   id="ai-summary"
-  class="hidden mb-10 p-6 bg-slate-900 rounded-2xl border border-slate-800"
+  class="hidden mb-10 p-6 bg-slate-900 rounded-2xl border border-slate-800 shadow-inner"
 >
-  <h2 class="font-bold mb-2">AI 요약</h2>
-  <p id="summary-text" class="text-slate-300"></p>
+  <h2 class="font-bold mb-3 text-indigo-400 flex items-center gap-2">
+    <span class="text-xl">📊</span> AI 요약
+  </h2>
+  <p id="summary-text" class="text-slate-300 leading-relaxed"></p>
 </div>
 
-<!-- 댓글 카드 -->
-<div id="comment-list" class="grid grid-cols-3 gap-6"></div>
+<div id="comment-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  </div>
+
+<script>
+async function fetchComments() {
+    const urlInput = document.getElementById('youtube-url').value.trim();
+    if (!urlInput) {
+        alert("URL을 입력해주세요.");
+        return;
+    }
+
+    // 로딩 표시 (선택 사항: 버튼 비활성화 등)
+    const commentList = document.getElementById('comment-list');
+    commentList.innerHTML = '<div class="col-span-full text-center py-10 text-slate-500">데이터를 분석 중입니다...</div>';
+
+    try {
+        const response = await fetch(`/api/comments?url=${encodeURIComponent(urlInput)}`);
+        
+        // 🔒 관리자 권한 체크 (401 에러)
+        if (response.status === 401) {
+            const data = await response.json();
+            alert(data.message || "관리자 로그인이 필요합니다.");
+            window.location.href = "/admin/login";
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert("분석 중 오류 발생: " + data.error);
+            commentList.innerHTML = '';
+            return;
+        }
+
+        // --- 데이터 렌더링 로직 시작 ---
+        const summaryBox = document.getElementById('ai-summary');
+        const summaryText = document.getElementById('summary-text');
+
+        summaryBox.classList.remove('hidden');
+
+        // [수정] 데이터 방어 코드 적용 (undefined 방지)
+        const total = data.summary.total || 0;
+        const abuseCount = data.summary.abuse || 0;
+        const spamCount = data.summary.spam || 0;
+        const dangerCount = abuseCount + spamCount;
+
+        summaryText.textContent = `총 ${total}개의 댓글을 분석한 결과, ${dangerCount}개(욕설/비방: ${abuseCount}, 스팸: ${spamCount})의 위험 요소가 발견되었습니다.`;
+
+        // [수정] 댓글 리스트 매핑 로직 (label 영문 -> 한글 변환)
+        commentList.innerHTML = data.comments.map(c => {
+            let labelDisplayName = "정상";
+            let labelClass = "bg-green-900/40 text-green-400 border-green-800";
+
+            // 서버 응답 label 값에 따른 분류 및 스타일 지정
+            if (c.label === 'abuse') {
+                labelDisplayName = "욕설/비방";
+                labelClass = "bg-red-900/40 text-red-400 border-red-800";
+            } else if (c.label === 'spam') {
+                labelDisplayName = "광고/스팸";
+                labelClass = "bg-yellow-900/40 text-yellow-400 border-yellow-800";
+            }
+
+            return `
+                <div class="p-6 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col h-full hover:border-slate-600 transition-colors shadow-sm">
+                    <p class="font-bold mb-3 text-slate-100 flex items-center gap-2">
+                        <span class="text-xs text-slate-500">@</span>${c.author}
+                    </p>
+                    <p class="text-slate-400 mb-6 text-sm leading-relaxed flex-grow">
+                        "${c.text}"
+                    </p>
+                    <div class="mt-auto">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold border ${labelClass}">
+                            ${labelDisplayName}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        // --- 데이터 렌더링 로직 끝 ---
+
+    } catch (err) {
+        console.error(err);
+        alert("서버와 통신 중 오류가 발생했습니다.");
+        commentList.innerHTML = '';
+    }
+}
+</script>
 
 {% endblock %}

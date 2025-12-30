@@ -20,7 +20,9 @@ app = Flask(
     template_folder="frontend/templates",
     static_folder="frontend/static"
 )
-
+# ✨ [추가된 부분] 세션 암호화를 위한 비밀키 설정
+# 이 설정이 있어야 로그인 상태(session)를 유지할 수 있습니다.
+app.secret_key = "super_secret_key_1234"
 # ==============================
 # CORS 허용
 # ==============================
